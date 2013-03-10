@@ -9,4 +9,4 @@ pip install pyquery
 
 Usage
 ===
-python mint_bitcoin_sync.py "<mint.com-login>" "<mint.com-password>" "<public-bitcoin-address>"
+python mint_bitcoin_sync.py "mint.com-login" "mint.com-password" "public-bitcoin-address"
