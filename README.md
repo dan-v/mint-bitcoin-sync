@@ -1,7 +1,7 @@
 mint-bitcoin-sync
 =================
 
-Python script that will update mint.com with bitcoin balance of a specified bitcoin address
+Python script that will update mint.com with current bitcoin value in USD of specified bitcoin addresses
 
 Linux Requirements
 ===
@@ -27,4 +27,4 @@ Mint.com Requirements
 
 Usage
 ===
-python mint_bitcoin_sync.py "mint.com-login" "mint.com-password" "public-bitcoin-address"
+python mint_bitcoin_sync.py "mint.com-login" "mint.com-password" "public-bitcoin-addresses-comma-separated"
