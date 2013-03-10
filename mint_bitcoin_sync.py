@@ -60,14 +60,18 @@ def get_bitcoin_account_id_from_mint(token):
 
     raise Exception("Failed to find a mint account named Bitcoin")
 
-def get_bitcoin_total_usd(address):
+def get_bitcoin_total_usd(addresses):
     # Get total bitcoins at address
-    con = urllib2.urlopen('http://blockchain.info/q/addressbalance/%s?confirmations=6' % address)
-    bitcoins_satoshis = con.read()
-    if not bitcoins_satoshis:
-        raise Exception("Failed to get address balance for address %s" % address)
-    bitcoins = float(bitcoins_satoshis) / 100000000.00000000
-    print "Bitcoin address '%s' has %.8f BTC" % (address, bitcoins)
+    bitcoin_total = 0.00000000
+    for address in addresses.split(","):
+        con = urllib2.urlopen('http://blockchain.info/q/addressbalance/%s' % address)
+        bitcoins_satoshis = con.read()
+        if not bitcoins_satoshis:
+            raise Exception("Failed to get address balance for address %s" % address)
+        bitcoins = float(bitcoins_satoshis) / 100000000.00000000
+        bitcoin_total += bitcoins
+        print "Bitcoin address '%s' has %.8f BTC" % (address, bitcoins)
+    print "\nTotal bitcoins for all addresses: %.8f BTC" % bitcoin_total
 
     # Get 24 hour price in USD
     con = urllib2.urlopen('http://blockchain.info/q/24hrprice')
@@ -78,8 +82,8 @@ def get_bitcoin_total_usd(address):
     price = float(price)
 
     # Determine current balance
-    total = bitcoins * price
-    print "Current balance for bitcoin address '%s': %s\n" % (address,format_usd(total))
+    total = bitcoin_total * price
+    print "Current combined balance for all addresses: %s\n" % (format_usd(total))
     
     return total
 
@@ -101,13 +105,13 @@ if __name__ == "__main__":
     import getpass, sys
 
     if len(sys.argv) >= 4:
-        email, password, bitcoin_address = sys.argv[1:]
+        email, password, bitcoin_addresses = sys.argv[1:]
     else:
-        bitcoin_address = raw_input("Bitcoin address: ")
+        bitcoin_addresses = raw_input("Bitcoin addresses: ")
         email = raw_input("Mint email: ")
         password = getpass.getpass("Password: ")
 
-    total = get_bitcoin_total_usd(bitcoin_address) 
+    total = get_bitcoin_total_usd(bitcoin_addresses) 
     input = raw_input("Press any key to update Mint with these details\n")
     login_token = mint_login(email, password)
     bitcoin_account_id = get_bitcoin_account_id_from_mint(login_token)
