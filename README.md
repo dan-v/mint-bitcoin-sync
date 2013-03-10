@@ -1,11 +1,17 @@
 mint-bitcoin-sync
 =================
 
-Python script that will update mint.com with bitcoin balance at specified address
+Python script that will update mint.com with bitcoin balance of a specified bitcoin address
 
-Python Requirements
+Linux Requirements
 ===
-1. pip install pyquery
+* pip install pyquery
+
+Windows Requirements
+===
+* Need to install Python 2.7 (http://www.python.org/getit/)
+* Install lxml from prebuilt binary (http://pythonxy.googlecode.com/files/lxml-3.0.1-1_py27.exe)
+* c:\Python27\Scripts\pip.exe install pyquery
 
 Mint.com Requirements
 ===
