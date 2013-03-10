@@ -10,7 +10,9 @@ Linux Requirements
 Windows Requirements
 ===
 * Need to install Python 2.7 (http://www.python.org/getit/)
-* Install lxml from prebuilt binary (http://pythonxy.googlecode.com/files/lxml-3.0.1-1_py27.exe)
+* Install distribute from prebuilt binary (http://www.lfd.uci.edu/~gohlke/pythonlibs/#distribute)
+* Install pip from prebuilt binary (http://www.lfd.uci.edu/~gohlke/pythonlibs/#pip)
+* Install lxml from prebuilt binary (http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml)
 * c:\Python27\Scripts\pip.exe install pyquery
 
 Mint.com Requirements
