@@ -20,8 +20,8 @@ Mint.com Requirements
 1. On Mint.com, a new "Other" account needs to be added for bitcoins 
 2. Select 'Money (or Debt)' radio button
 3. Pick 'Cash (Positive)' from dropdown and click 'Next' button
-4. What would you like to call it? == Bitcoin
-5. How much is it worth == 0 (script will update it to correct value)
+4. What would you like to call it? Set it to 'Bitcoin'
+5. How much is it worth? Set it to '1' (script will update it to correct value when run)
 6. Is this associated with a loan, mortgage, or line of credit == No
 7. Click 'Add it!' button
 
