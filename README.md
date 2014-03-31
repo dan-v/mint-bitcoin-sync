@@ -5,17 +5,30 @@ Python script that will update mint.com with current bitcoin value in USD of spe
 
 Linux Requirements
 ===
-* pip install pyquery
+<pre>
+sudo pip install pyquery
+</pre>
+
+Mac OSX Requirements
+===
+<pre>
+sudo easy_install pip
+export CC='/usr/bin/gcc'
+sudo -E pip install pyquery
+</pre>
 
 Windows Requirements
 ===
-* Need to install Python 2.7 (http://www.python.org/getit/)
+* Need to install Python 2.7 (http://www.python.org/)
 * Install distribute from prebuilt binary (http://www.lfd.uci.edu/~gohlke/pythonlibs/#distribute)
 * Install pip from prebuilt binary (http://www.lfd.uci.edu/~gohlke/pythonlibs/#pip)
 * Install lxml from prebuilt binary (http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml)
-* c:\Python27\Scripts\pip.exe install pyquery
+* Open command prompt and run: 
+<pre>
+c:\Python27\Scripts\pip.exe install pyquery
+</pre>
 
-Mint.com Requirements
+Mint.com Setup
 ===
 1. On Mint.com, a new "Other" account needs to be added for bitcoins 
 2. Select 'Money (or Debt)' radio button
