@@ -136,11 +136,12 @@ def get_bitcoin_current_price_usd():
 def get_bitcoin_current_address_balance(public_address):
     BALANCE_URL = 'http://blockchain.info/q/addressbalance'
 
-    balance_request = requests.get('%s/%s' % (BALANCE_URL, public_address))
+    balance_url_with_address = '%s/%s' % (BALANCE_URL, public_address)
+    balance_request = requests.get(balance_url_with_address)
     if balance_request.status_code != requests.codes.ok:
-        raise Exception("Failed to get balance from URL '%s'. Error: %s" % (BALANCE_URL, balance_request.text))
+        raise Exception("Failed to get balance from URL '%s'. Error: %s" % (balance_url_with_address, balance_request.text))
     if not balance_request.text:
-        raise Exception("No balance could be retrieved from URL '%s'" % (BALANCE_URL))
+        raise Exception("No balance could be retrieved from URL '%s'" % (balance_url_with_address))
 
     try:
         balance = float(balance_request.text) / 100000000.00000000
