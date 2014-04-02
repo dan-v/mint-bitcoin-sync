@@ -9,7 +9,7 @@ sudo pip install requests
 </pre>
 
 # Windows Requirements
-* Install Python 3.4+ so pip is included (http://www.python.org/getit/)
+* Install Python 3.4+ so pip is included
 * Install requests
 <pre>
 c:\Python34\Scripts\pip.exe install requests
