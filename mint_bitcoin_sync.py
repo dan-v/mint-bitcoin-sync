@@ -150,6 +150,7 @@ if __name__ == "__main__":
                         help='Mint.com Bitcoin account label', required=True)
     parser.add_argument('-a', action='append', default=[], dest='bitcoin_addresses',
                         help='Bitcoin public address (specify multiple -a for more than one)', required=True)
+
     parser.add_argument('--version', action='version', version='%(prog)s 1.1')
 
     args = parser.parse_args()
@@ -164,8 +165,6 @@ if __name__ == "__main__":
     # Determine current balance
     total_usd = bitcoin_balance * current_bitcoin_price_usd
     print("Current combined balance for all addresses: $%.2f\n" % total_usd)
-
-    response = raw_input("Press any key to update Mint.com with new balance\n")
 
     # Initialize mint object
     mint = Mint(args.email, args.password)
