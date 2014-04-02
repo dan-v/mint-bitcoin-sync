@@ -1,9 +1,18 @@
 # mint-bitcoin-sync
 A python script that will update Mint.com with current value of Bitcoins in specified bitcoin addresses. Uses Blockchain.info API to get price over past 24 hours. Note that there is no public Mint.com API, so this is using "private" API calls that may break at any point.
 
-# Requirements
+# Linux Requirements
+* Python (2.7+ or 3.x)
+* Install requests
 <pre>
-pip install requests
+sudo pip install requests
+</pre>
+
+# Windows Requirements
+* Install Python 3.4+ so pip is included (http://www.python.org/getit/)
+* Install requests
+<pre>
+c:\Python34\Scripts\pip.exe install requests
 </pre>
 
 # Mint.com Setup
