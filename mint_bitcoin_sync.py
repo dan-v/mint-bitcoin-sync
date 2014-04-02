@@ -115,35 +115,41 @@ class Mint:
                                                                                                     post_request.text))
         print("Updated account on Mint with current balance: %s" % formatted_amount)
 
-
-class BlockChainInfo:
-    BALANCE_URL = 'http://blockchain.info/q/addressbalance'
+def get_bitcoin_current_price_usd():
     PRICE_URL = 'http://blockchain.info/q/24hrprice'
 
-    def __init__(self):
-        pass
+    price_request = requests.get(PRICE_URL)
+    if price_request.status_code != requests.codes.ok:
+        raise Exception("Failed to get price from URL '%s'. Error: %s" % (PRICE_URL, price_request.text))
+    if not price_request.text:
+        raise Exception("No price could be retrieved from URL '%s'" % (PRICE_URL))
 
-    @staticmethod
-    def get_bitcoin_current_address_balance(public_address):
-        try:
-            bitcoins_satoshis = requests.get('%s/%s' % (BlockChainInfo.BALANCE_URL, public_address)).text
-            bitcoins = float(bitcoins_satoshis) / 100000000.00000000
-        except:
-            raise Exception("Failed to get balance for address %s" % public_address)
+    try:
+        current_price = float(price_request.text)
+    except:
+        raise Exception("Failed to convert price '%s' to float" % price_request.text)
 
-        print("Bitcoin address '%s' has %.8f BTC" % (public_address, bitcoins))
-        return bitcoins
+    print("Using BTC price: $%.2f" % current_price)
+    return current_price
 
-    @staticmethod
-    def get_bitcoin_current_price_usd():
-        try:
-            raw_price = requests.get(BlockChainInfo.PRICE_URL).text
-            price = float(raw_price)
-        except:
-            raise Exception("Failed to get price from '%s'" % BlockChainInfo.PRICE_URL)
 
-        print("Using BTC price: $%.2f" % price)
-        return price
+def get_bitcoin_current_address_balance(public_address):
+    BALANCE_URL = 'http://blockchain.info/q/addressbalance'
+
+    balance_request = requests.get('%s/%s' % (BALANCE_URL, public_address))
+    if balance_request.status_code != requests.codes.ok:
+        raise Exception("Failed to get balance from URL '%s'. Error: %s" % (BALANCE_URL, balance_request.text))
+    if not balance_request.text:
+        raise Exception("No balance could be retrieved from URL '%s'" % (BALANCE_URL))
+
+    try:
+        balance = float(balance_request.text) / 100000000.00000000
+    except:
+        raise Exception("Failed to convert balance '%s' to float" % public_address)
+
+    print("Bitcoin address '%s' has %.8f BTC" % (public_address, balance))
+    return balance
+
 
 if __name__ == "__main__":
     # Create argument parser
@@ -169,8 +175,8 @@ if __name__ == "__main__":
     # Get bitcoin balance and price
     bitcoin_balance = 0.00000000
     for address in args.bitcoin_addresses:
-        bitcoin_balance += BlockChainInfo.get_bitcoin_current_address_balance(address)
-    current_bitcoin_price_usd = BlockChainInfo.get_bitcoin_current_price_usd()
+        bitcoin_balance += get_bitcoin_current_address_balance(address)
+    current_bitcoin_price_usd = get_bitcoin_current_price_usd()
 
     # Determine current balance
     total_usd = bitcoin_balance * current_bitcoin_price_usd
