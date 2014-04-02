@@ -2,6 +2,7 @@ import json
 import requests
 import locale
 import argparse
+import getpass
 
 
 class Mint:
@@ -11,7 +12,7 @@ class Mint:
     LOGOUT_URL = 'https://wwws.mint.com/bundledServiceController.xevent?token=undefined'
     ACCOUNTS_URL = 'https://wwws.mint.com/bundledServiceController.xevent?token='
     ACCOUNTS_UPDATE_URL = 'https://wwws.mint.com/updateAccount.xevent'
-    MAGIC_REQUEST_ID = '115484' # Not sure what this value actually is
+    MAGIC_REQUEST_ID = '115484'  # Not sure what this value actually is
     HTTP_HEADERS = {"accept": "application/json"}
 
     def __init__(self, email, password):
@@ -28,15 +29,15 @@ class Mint:
             raise Exception("Failed to load Mint main page '%s'" % Mint.START_URL)
 
         # Send pre-login post?
-        data = {"username": self.email}
-        pre_login = self.session.post(Mint.PRELOGIN_URL, data=data, headers={"accept": "*/*"})
+        pre_login_data = {"username": self.email}
+        pre_login = self.session.post(Mint.PRELOGIN_URL, data=pre_login_data)
         if pre_login.status_code != requests.codes.ok:
             raise Exception("Failed to post to Mint pre-login URL '%s'" % Mint.PRELOGIN_URL)
 
         # Post to login URL
-        data = {"username": self.email, "password": self.password, "task": "L", "browser": "firefox",
+        login_data = {"username": self.email, "password": self.password, "task": "L", "browser": "firefox",
                 "browserVersion": "27", "os": "linux"}
-        login = self.session.post(Mint.LOGIN_URL, data=data, headers=Mint.HTTP_HEADERS)
+        login = self.session.post(Mint.LOGIN_URL, data=login_data, headers=Mint.HTTP_HEADERS)
         if login.status_code != requests.codes.ok:
             raise Exception("Failed to login to Mint URL '%s'" % Mint.LOGIN_URL)
 
@@ -50,8 +51,9 @@ class Mint:
 
     def logout(self):
         print("Logging out of Mint.com")
+        self.token = None
         try:
-            logout = self.session.get(Mint.LOGOUT_URL)
+            self.session.post(Mint.LOGOUT_URL)
         except:
             pass
 
@@ -78,11 +80,12 @@ class Mint:
                 "id": Mint.MAGIC_REQUEST_ID,
                 "service": "MintAccountService",
                 "task": "getAccountsSorted"}
-        ])}
+                ])}
 
-        accounts = self.session.post(Mint.ACCOUNTS_URL + self.token, data=data, headers=Mint.HTTP_HEADERS)
+        accounts_url_with_token = Mint.ACCOUNTS_URL + self.token
+        accounts = self.session.post(accounts_url_with_token, data=data, headers=Mint.HTTP_HEADERS)
         if accounts.status_code != requests.codes.ok:
-            raise Exception("Failed to get account data from URL '%s'" % (Mint.ACCOUNTS_URL,accounts.text))
+            raise Exception("Failed to get account data from URL '%s'. Error: %s" % (Mint.ACCOUNTS_URL, accounts.text))
 
         if Mint.MAGIC_REQUEST_ID not in accounts.text:
             raise Exception("Could not parse account data: " + accounts)
@@ -107,7 +110,9 @@ class Mint:
                 "accountType": "3",  "accountStatus": "1",  "token": self.token}
         post_request = self.session.post(Mint.ACCOUNTS_UPDATE_URL, data=data)
         if post_request.status_code != requests.codes.ok:
-            raise Exception("Failed to set new balance '%s' for Bitcoin account (%s). Error: %s" % (formatted_amount, account_id, post_request.text))
+            raise Exception("Failed to set new balance '%s' for Bitcoin account (%s). Error: %s" % (formatted_amount,
+                                                                                                    account_id,
+                                                                                                    post_request.text))
         print("Updated account on Mint with current balance: %s" % formatted_amount)
 
 
@@ -118,17 +123,19 @@ class BlockChainInfo:
     def __init__(self):
         pass
 
-    def get_bitcoin_current_address_balance(self, address):
+    @staticmethod
+    def get_bitcoin_current_address_balance(public_address):
         try:
-            bitcoins_satoshis = requests.get('%s/%s' % (BlockChainInfo.BALANCE_URL, address)).text
+            bitcoins_satoshis = requests.get('%s/%s' % (BlockChainInfo.BALANCE_URL, public_address)).text
             bitcoins = float(bitcoins_satoshis) / 100000000.00000000
         except:
-            raise Exception("Failed to get address balance for address %s" % address)
+            raise Exception("Failed to get balance for address %s" % public_address)
 
-        print("Bitcoin address '%s' has %.8f BTC" % (address, bitcoins))
+        print("Bitcoin address '%s' has %.8f BTC" % (public_address, bitcoins))
         return bitcoins
 
-    def get_bitcoin_current_price_usd(self):
+    @staticmethod
+    def get_bitcoin_current_price_usd():
         try:
             raw_price = requests.get(BlockChainInfo.PRICE_URL).text
             price = float(raw_price)
@@ -140,12 +147,13 @@ class BlockChainInfo:
 
 if __name__ == "__main__":
     # Create argument parser
-    parser = argparse.ArgumentParser(description='Update Mint.com with current value of Bitcoins in specified bitcoin addresses')
+    parser = argparse.ArgumentParser(description='Update Mint.com with current value of Bitcoins in specified bitcoin '
+                                                 'addresses')
 
     parser.add_argument('-e', action='store', dest='email',
                         help='Mint.com Email Address', required=True)
     parser.add_argument('-p', action='store', dest='password',
-                        help='Mint.com Password', required=True)
+                        help='Mint.com Password (will prompt if not provided)')
     parser.add_argument('-l', action='store', dest='bitcoin_account_label',
                         help='Mint.com Bitcoin account label', required=True)
     parser.add_argument('-a', action='append', default=[], dest='bitcoin_addresses',
@@ -155,12 +163,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if not args.password:
+        args.password = getpass.getpass("Mint.com password: ")
+
     # Get bitcoin balance and price
-    blockchain = BlockChainInfo()
     bitcoin_balance = 0.00000000
     for address in args.bitcoin_addresses:
-        bitcoin_balance += blockchain.get_bitcoin_current_address_balance(address)
-    current_bitcoin_price_usd = blockchain.get_bitcoin_current_price_usd()
+        bitcoin_balance += BlockChainInfo.get_bitcoin_current_address_balance(address)
+    current_bitcoin_price_usd = BlockChainInfo.get_bitcoin_current_price_usd()
 
     # Determine current balance
     total_usd = bitcoin_balance * current_bitcoin_price_usd
