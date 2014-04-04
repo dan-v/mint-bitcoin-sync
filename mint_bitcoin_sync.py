@@ -3,11 +3,11 @@ import requests
 import locale
 import argparse
 import getpass
+import logging
 
 
 class Mint:
     START_URL = 'https://wwws.mint.com/login.event?task=L'
-    PRELOGIN_URL = 'https://wwws.mint.com/getUserPod.xevent'
     LOGIN_URL = 'https://wwws.mint.com/loginUserSubmit.xevent'
     LOGOUT_URL = 'https://wwws.mint.com/bundledServiceController.xevent?token=undefined'
     ACCOUNTS_URL = 'https://wwws.mint.com/bundledServiceController.xevent?token='
@@ -22,17 +22,11 @@ class Mint:
         self.session = requests.Session()
 
     def login(self):
-        print("Logging into Mint.com")
+        logging.info("Logging into Mint.com")
         # Go to main page
         start = self.session.get(Mint.START_URL)
         if start.status_code != requests.codes.ok:
             raise Exception("Failed to load Mint main page '%s'" % Mint.START_URL)
-
-        # Send pre-login post?
-        pre_login_data = {"username": self.email}
-        pre_login = self.session.post(Mint.PRELOGIN_URL, data=pre_login_data)
-        if pre_login.status_code != requests.codes.ok:
-            raise Exception("Failed to post to Mint pre-login URL '%s'" % Mint.PRELOGIN_URL)
 
         # Post to login URL
         login_data = {"username": self.email, "password": self.password, "task": "L", "browser": "firefox",
@@ -50,7 +44,7 @@ class Mint:
         self.token = login_json["sUser"]["token"]
 
     def logout(self):
-        print("Logging out of Mint.com")
+        logging.info("Logging out of Mint.com")
         self.token = None
         try:
             self.session.post(Mint.LOGOUT_URL)
@@ -61,7 +55,7 @@ class Mint:
         if not self.token:
             raise Exception("Can only get Mint accounts when logged in. Please login first.")
 
-        print("Getting list of accounts")
+        logging.info("Getting list of accounts")
 
         data = {"input": json.dumps([
                 {"args": {
@@ -113,7 +107,8 @@ class Mint:
             raise Exception("Failed to set new balance '%s' for Bitcoin account (%s). Error: %s" % (formatted_amount,
                                                                                                     account_id,
                                                                                                     post_request.text))
-        print("Updated account on Mint with current balance: %s" % formatted_amount)
+        logging.info("Updated account on Mint with current balance: {}".format(formatted_amount))
+
 
 def get_bitcoin_current_price_usd():
     PRICE_URL = 'http://blockchain.info/q/24hrprice'
@@ -129,7 +124,7 @@ def get_bitcoin_current_price_usd():
     except:
         raise Exception("Failed to convert price '%s' to float" % price_request.text)
 
-    print("Using BTC price: $%.2f" % current_price)
+    logging.info("Using BTC price: $%.2f" % current_price)
     return current_price
 
 
@@ -148,11 +143,11 @@ def get_bitcoin_current_address_balance(public_address):
     except:
         raise Exception("Failed to convert balance '%s' to float" % public_address)
 
-    print("Bitcoin address '%s' has %.8f BTC" % (public_address, balance))
+    logging.info("Bitcoin address '%s' has %.8f BTC" % (public_address, balance))
     return balance
 
 
-if __name__ == "__main__":
+def main():
     # Create argument parser
     parser = argparse.ArgumentParser(description='Update Mint.com with current value of Bitcoins in specified bitcoin '
                                                  'addresses')
@@ -170,6 +165,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Setup logging
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)-6s line %(lineno)-4s %(message)s')
+
+    # Get password if not provided
     if not args.password:
         args.password = getpass.getpass("Mint.com password: ")
 
@@ -181,7 +181,7 @@ if __name__ == "__main__":
 
     # Determine current balance
     total_usd = bitcoin_balance * current_bitcoin_price_usd
-    print("Current combined balance for all addresses: $%.2f\n" % total_usd)
+    logging.info("Current combined balance for all addresses: $%.2f\n" % total_usd)
 
     # Initialize mint object
     mint = Mint(args.email, args.password)
@@ -201,4 +201,8 @@ if __name__ == "__main__":
     # Logout
     mint.logout()
 
-    print("\nFinished")
+    logging.info("Finished")
+
+
+if __name__ == "__main__":
+    main()
