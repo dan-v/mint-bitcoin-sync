@@ -1,150 +1,9 @@
-import json
-import requests
-import locale
 import argparse
 import getpass
 import logging
-
-
-class Mint:
-    START_URL = 'https://wwws.mint.com/login.event?task=L'
-    LOGIN_URL = 'https://wwws.mint.com/loginUserSubmit.xevent'
-    LOGOUT_URL = 'https://wwws.mint.com/bundledServiceController.xevent?token=undefined'
-    ACCOUNTS_URL = 'https://wwws.mint.com/bundledServiceController.xevent?token='
-    ACCOUNTS_UPDATE_URL = 'https://wwws.mint.com/updateAccount.xevent'
-    MAGIC_REQUEST_ID = '115484'  # Not sure what this value actually is
-    HTTP_HEADERS = {"accept": "application/json"}
-
-    def __init__(self, email, password):
-        self.email = email
-        self.password = password
-        self.token = None
-        self.session = requests.Session()
-
-    def login(self):
-        logging.info("Logging into Mint.com")
-        # Go to main page
-        start = self.session.get(Mint.START_URL)
-        if start.status_code != requests.codes.ok:
-            raise Exception("Failed to load Mint main page '%s'" % Mint.START_URL)
-
-        # Post to login URL
-        login_data = {"username": self.email, "password": self.password, "task": "L", "browser": "firefox",
-                "browserVersion": "27", "os": "linux"}
-        login = self.session.post(Mint.LOGIN_URL, data=login_data, headers=Mint.HTTP_HEADERS)
-        if login.status_code != requests.codes.ok:
-            raise Exception("Failed to login to Mint URL '%s'" % Mint.LOGIN_URL)
-
-        # Get token and set
-        if "token" not in login.text:
-            raise Exception("Mint.com login failed[1]")
-        login_json = (login.json())
-        if not login_json["sUser"]["token"]:
-            raise Exception("Mint.com login failed[2]")
-        self.token = login_json["sUser"]["token"]
-
-    def logout(self):
-        logging.info("Logging out of Mint.com")
-        self.token = None
-        try:
-            self.session.post(Mint.LOGOUT_URL)
-        except:
-            pass
-
-    def get_accounts(self):
-        if not self.token:
-            raise Exception("Can only get Mint accounts when logged in. Please login first.")
-
-        logging.info("Getting list of accounts")
-
-        data = {"input": json.dumps([
-                {"args": {
-                    "types": [
-                        "BANK",
-                        "CREDIT",
-                        "INVESTMENT",
-                        "LOAN",
-                        "MORTGAGE",
-                        "OTHER_PROPERTY",
-                        "REAL_ESTATE",
-                        "VEHICLE",
-                        "UNCLASSIFIED"
-                    ]
-                },
-                "id": Mint.MAGIC_REQUEST_ID,
-                "service": "MintAccountService",
-                "task": "getAccountsSorted"}
-                ])}
-
-        accounts_url_with_token = Mint.ACCOUNTS_URL + self.token
-        accounts = self.session.post(accounts_url_with_token, data=data, headers=Mint.HTTP_HEADERS)
-        if accounts.status_code != requests.codes.ok:
-            raise Exception("Failed to get account data from URL '%s'. Error: %s" % (Mint.ACCOUNTS_URL, accounts.text))
-
-        if Mint.MAGIC_REQUEST_ID not in accounts.text:
-            raise Exception("Could not parse account data: " + accounts)
-        accounts_json = (accounts.json())
-        account_list = accounts_json["response"][Mint.MAGIC_REQUEST_ID]["response"]
-        return account_list
-
-    def get_account_id_by_name(self, accounts_list, account_name):
-        for account in accounts_list:
-            if account["name"] == account_name:
-                return account["id"]
-        raise Exception("Failed to find a Mint account named %s" % account_name)
-
-    def format_usd(self, amount):
-        locale.setlocale(locale.LC_ALL, '')
-        formatted_amount = locale.currency(amount, grouping=True)
-        return formatted_amount
-
-    def set_account_value(self, account_id, account_value):
-        formatted_amount = self.format_usd(account_value)
-        data = {"accountId": account_id, "types": "ot", "accountName": "Bitcoin", "accountValue": formatted_amount,
-                "accountType": "3",  "accountStatus": "1",  "token": self.token}
-        post_request = self.session.post(Mint.ACCOUNTS_UPDATE_URL, data=data)
-        if post_request.status_code != requests.codes.ok:
-            raise Exception("Failed to set new balance '%s' for Bitcoin account (%s). Error: %s" % (formatted_amount,
-                                                                                                    account_id,
-                                                                                                    post_request.text))
-        logging.info("Updated account on Mint with current balance: {}".format(formatted_amount))
-
-
-def get_bitcoin_current_price_usd():
-    PRICE_URL = 'http://blockchain.info/q/24hrprice'
-
-    price_request = requests.get(PRICE_URL)
-    if price_request.status_code != requests.codes.ok:
-        raise Exception("Failed to get price from URL '%s'. Error: %s" % (PRICE_URL, price_request.text))
-    if not price_request.text:
-        raise Exception("No price could be retrieved from URL '%s'" % (PRICE_URL))
-
-    try:
-        current_price = float(price_request.text)
-    except:
-        raise Exception("Failed to convert price '%s' to float" % price_request.text)
-
-    logging.info("Using BTC price: $%.2f" % current_price)
-    return current_price
-
-
-def get_bitcoin_current_address_balance(public_address):
-    BALANCE_URL = 'http://blockchain.info/q/addressbalance'
-
-    balance_url_with_address = '%s/%s' % (BALANCE_URL, public_address)
-    balance_request = requests.get(balance_url_with_address)
-    if balance_request.status_code != requests.codes.ok:
-        raise Exception("Failed to get balance from URL '%s'. Error: %s" % (balance_url_with_address, balance_request.text))
-    if not balance_request.text:
-        raise Exception("No balance could be retrieved from URL '%s'" % (balance_url_with_address))
-
-    try:
-        balance = float(balance_request.text) / 100000000.00000000
-    except:
-        raise Exception("Failed to convert balance '%s' to float" % public_address)
-
-    logging.info("Bitcoin address '%s' has %.8f BTC" % (public_address, balance))
-    return balance
+from lib.blockchaininfo import get_bitcoin_current_price_usd, get_bitcoin_current_address_balance
+from lib.mint import Mint
+from lib.utils import money_format
 
 
 def main():
@@ -161,7 +20,7 @@ def main():
     parser.add_argument('-a', action='append', default=[], dest='bitcoin_addresses',
                         help='Bitcoin public address (specify multiple -a for more than one)', required=True)
 
-    parser.add_argument('--version', action='version', version='%(prog)s 1.1')
+    parser.add_argument('--version', action='version', version='%(prog)s 1.2')
 
     args = parser.parse_args()
 
@@ -181,7 +40,8 @@ def main():
 
     # Determine current balance
     total_usd = bitcoin_balance * current_bitcoin_price_usd
-    logging.info("Current combined balance for all addresses: $%.2f\n" % total_usd)
+    total_usd_string = money_format(total_usd)
+    logging.info("Current combined balance for all addresses: {}\n".format(total_usd_string))
 
     # Initialize mint object
     mint = Mint(args.email, args.password)
@@ -196,7 +56,7 @@ def main():
     mint_bitcoin_account_id = mint.get_account_id_by_name(mint_accounts, args.bitcoin_account_label)
 
     # Update mint account id with new balance
-    mint.set_account_value(mint_bitcoin_account_id, total_usd)
+    mint.set_account_value(mint_bitcoin_account_id, total_usd_string)
 
     # Logout
     mint.logout()
