@@ -56,7 +56,7 @@ def main():
     mint_bitcoin_account_id = mint.get_account_id_by_name(mint_accounts, args.bitcoin_account_label)
 
     # Update mint account id with new balance
-    mint.set_account_value(mint_bitcoin_account_id, total_usd_string)
+    mint.set_account_value(mint_bitcoin_account_id, args.bitcoin_account_label, total_usd_string)
 
     # Logout
     mint.logout()
