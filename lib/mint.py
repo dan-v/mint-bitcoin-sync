@@ -95,9 +95,9 @@ class Mint:
                 return account["id"]
         raise Exception("Failed to find a Mint account named {}".format(account_name))
 
-    def set_account_value(self, account_id, account_value):
+    def set_account_value(self, account_id, label, account_value):
         # Post to set value of account
-        data = {"accountId": account_id, "types": "ot", "accountName": "Bitcoin", "accountValue": account_value,
+        data = {"accountId": account_id, "types": "ot", "accountName": label, "accountValue": account_value,
                 "accountType": "3",  "accountStatus": "1",  "token": self.token}
         post_request = self.session.post(Mint.ACCOUNTS_UPDATE_URL, data=data)
         if post_request.status_code != requests.codes.ok:
