@@ -21,8 +21,8 @@ pip install requests
 #Usage
 ```
 usage: mint_bitcoin_sync.py [-h] -e EMAIL [-p PASSWORD] -l
-                            BITCOIN_ACCOUNT_LABEL -a BITCOIN_ADDRESSES
-                            [--version]
+                            BITCOIN_ACCOUNT_LABEL [-a BITCOIN_ADDRESSES]
+                            [-f BITCOIN_ADDRESS_FILE] [--version]
 
 Update Mint.com with current value of Bitcoins in specified bitcoin addresses
 
@@ -34,6 +34,10 @@ optional arguments:
                         Mint.com Bitcoin account label
   -a BITCOIN_ADDRESSES  Bitcoin public address (specify multiple -a for more
                         than one)
+  -f BITCOIN_ADDRESS_FILE
+                        File containing Bitcoin public addresses, one
+                        address per line. Must specify either -a or -f 
+                        argument, must not specify both.
   --version             show program's version number and exit
 
 ```
