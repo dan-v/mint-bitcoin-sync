@@ -18,9 +18,11 @@ def main():
     parser.add_argument('-l', action='store', dest='bitcoin_account_label',
                         help='Mint.com Bitcoin account label', required=True)
     parser.add_argument('-a', action='append', default=[], dest='bitcoin_addresses',
-                        help='Bitcoin public address (specify multiple -a for more than one)', required=True)
+                        help='Bitcoin public address (specify multiple -a for more than one)')
+    parser.add_argument('-f', action='store', dest='bitcoin_address_file',
+                        help='Bitcoin public address file containing one address per line')
 
-    parser.add_argument('--version', action='version', version='%(prog)s 1.2')
+    parser.add_argument('--version', action='version', version='%(prog)s 1.3')
 
     args = parser.parse_args()
 
@@ -31,6 +33,15 @@ def main():
     # Get password if not provided
     if not args.password:
         args.password = getpass.getpass("Mint.com password: ")
+
+    # Get addresses from file if not provided by -a argument
+    if not args.bitcoin_addresses:
+        if not args.bitcoin_address_file:
+            print "must provide either -a or -f argument"
+            return
+        f = open(args.bitcoin_address_file,'r')
+        args.bitcoin_addresses = f.read().splitlines()
+        f.closed
 
     # Get bitcoin balance and price
     bitcoin_balance = 0.00000000
